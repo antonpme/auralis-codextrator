@@ -8,7 +8,8 @@
     "codextrator": "./bin/codextrator.js"
   },
   "scripts": {
-    "smoke": "node ./bin/codextrator.js --help"
+    "smoke": "node ./bin/codextrator.js --help",
+    "test": "node ./test/codextrator-cli.test.js"
   },
   "engines": {
     "node": ">=20"
