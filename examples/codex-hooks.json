@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash|shell_command|functions.shell_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/tools/auralis-codextrator/bin/codextrator.js\" hook-post-tool-use"
+          }
+        ]
+      }
+    ]
+  }
+}
