@@ -25,6 +25,78 @@ and branch live in the registry metadata.
 - No cloud dependency.
 - No runtime dependency beyond Node.js.
 
+## MCP Mode
+
+Codextrator now has an MCP server that uses the same local store without relying
+on Codex Desktop automations or `target_thread_id` resume.
+
+Run it with:
+
+```powershell
+node E:\01-AURALIS\tools\auralis-codextrator\src\server.js `
+  --root E:\01-AURALIS `
+  --agent elian
+```
+
+Suggested Codex MCP config:
+
+```toml
+[mcp_servers.auralis-codextrator]
+command = "node"
+args = ["E:/01-AURALIS/tools/auralis-codextrator/src/server.js", "--root", "E:/01-AURALIS", "--agent", "elian"]
+```
+
+MCP tools:
+
+- `get_status`: read slots, unread cursor counts, heartbeat, and task state.
+- `register_slot`: create or refresh a stable focus slot.
+- `send_message`: append a durable ledger message.
+- `read_inbox`: read unread messages through a cursor without deleting files.
+- `create_task`: queue a task and deliver a `task.assign` message.
+- `claim_next_task`: claim the next queued task and mark it active.
+- `update_task`: update status, commit, tests, or blockers.
+- `report_commit`: report a focus-slot commit to the coordinator.
+- `record_heartbeat`: record live-run health with `run_id`, not Desktop thread id.
+- `plan_wake`: build a safe MCP-ledger wake plan without mutating inboxes,
+  tasks, or Codex Desktop threads.
+- `record_wake_attempt`: persist notify-only or adapter wake proof records.
+
+Design boundary: Codex automations should not be the primary transport for
+focus-slot work. If used later, they should only act as an external watchdog.
+Actual coordination should happen through the MCP inbox/task/report tools.
+
+### Wake Watcher Proof
+
+`plan_wake` is the first external-watch primitive. It reads only MCP registry,
+cursor inbox, task, and heartbeat state, then returns one of:
+
+- `DONT_NOTIFY`: nothing actionable is waiting.
+- `NOTIFY`: coordinator attention or recovery is needed.
+- `WAKE`: one or more healthy slots have unread work and should be nudged by an
+  external adapter.
+
+The tool is deliberately non-mutating. It does not claim tasks, clear inboxes,
+start Desktop automations, or create Codex app-server turns. With
+`adapter: "codex-app-server"` it returns a dry-run `turn/start` request template
+and marks the missing `app_server_thread_id` requirement instead of guessing a
+thread id.
+
+After an external helper performs a notify-only or app-server wake attempt, it
+can call `record_wake_attempt` to write an audit record under `wake/`.
+
+For local schedulers or a standalone daemon, use the CLI wrapper:
+
+```powershell
+node E:\01-AURALIS\tools\auralis-codextrator\bin\codextrator-mcp-watch.js `
+  --root E:\01-AURALIS `
+  --json
+```
+
+If a legacy CLI store exists at `ROOT\.auralis-codextrator` and a current MCP v2
+store exists at `ROOT\.codextrator-mcp-root\.auralis-codextrator`, the watch
+wrapper selects the MCP v2 root. This avoids replaying stale legacy inbox state
+as active work.
+
 ## Quick Start
 
 Initialize a shared store:

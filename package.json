@@ -1,15 +1,19 @@
 {
   "name": "auralis-codextrator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Parallel session orchestration for Codex Desktop.",
   "license": "MIT",
   "private": false,
   "bin": {
-    "codextrator": "./bin/codextrator.js"
+    "codextrator": "./bin/codextrator.js",
+    "codextrator-mcp-watch": "./bin/codextrator-mcp-watch.js"
   },
   "scripts": {
     "smoke": "node ./bin/codextrator.js --help",
-    "test": "node ./test/codextrator-cli.test.js"
+    "test": "node ./test/codextrator-cli.test.js && node ./test/codextrator-mcp.test.js && node ./test/codextrator-watch.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1"
   },
   "engines": {
     "node": ">=20"
