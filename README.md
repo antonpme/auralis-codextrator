@@ -97,6 +97,23 @@ store exists at `ROOT\.codextrator-mcp-root\.auralis-codextrator`, the watch
 wrapper selects the MCP v2 root. This avoids replaying stale legacy inbox state
 as active work.
 
+### App-Server Proof
+
+Use the app-server proof command before enabling a wake adapter that talks to
+real focus slots:
+
+```powershell
+node E:\01-AURALIS\tools\auralis-codextrator\bin\codextrator-app-server-proof.js `
+  --json
+```
+
+The proof starts `codex app-server --listen ws://127.0.0.1:PORT`, connects over
+WebSocket, calls `initialize`, creates an ephemeral read-only test thread, sends
+a harmless `turn/start`, waits for `turn/completed`, verifies the final text,
+and then kills the app-server process tree. It defaults to `effort=low`; on this
+host `effort=minimal` failed because the current tool configuration included
+tools that are incompatible with minimal reasoning.
+
 ## Quick Start
 
 Initialize a shared store:

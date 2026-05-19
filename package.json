@@ -6,6 +6,7 @@
   "private": false,
   "bin": {
     "codextrator": "./bin/codextrator.js",
+    "codextrator-app-server-proof": "./bin/codextrator-app-server-proof.js",
     "codextrator-mcp-watch": "./bin/codextrator-mcp-watch.js"
   },
   "scripts": {
