@@ -8,6 +8,7 @@ const { spawn, spawnSync } = require("child_process");
 const CODEXTRATOR_MCP_SERVER = "auralis-codextrator";
 const CODEXTRATOR_MCP_TOOLS = new Set([
   "claim_next_task",
+  "get_focus_board",
   "get_status",
   "read_inbox",
   "record_heartbeat",

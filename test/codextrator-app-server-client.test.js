@@ -32,6 +32,17 @@ assert.deepStrictEqual(decision, {
 
 decision = decideMcpElicitationResponse({
   ...heartbeatApproval,
+  message: "Allow the auralis-codextrator MCP server to run tool \"get_focus_board\"?"
+}, {
+  approveCodextratorMcp: true
+});
+assert.deepStrictEqual(decision, {
+  action: "accept",
+  content: {}
+});
+
+decision = decideMcpElicitationResponse({
+  ...heartbeatApproval,
   message: "Allow the auralis-codextrator MCP server to run tool \"unknown_tool\"?"
 }, {
   approveCodextratorMcp: true
