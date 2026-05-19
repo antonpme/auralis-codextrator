@@ -83,6 +83,24 @@ try {
   const wakeFiles = fs.readdirSync(path.join(workspaceRoot, ".auralis-codextrator", "wake"));
   assert.strictEqual(wakeFiles.length, 1);
 
+  store.claimNextTask(storeDir, "session-01");
+  plan = JSON.parse(runWatch([
+    "--root",
+    workspaceRoot,
+    "--json",
+    "--adapter",
+    "codex-app-server",
+    "--heartbeat-max-minutes",
+    "60"
+  ]));
+  assert.strictEqual(plan.decision, "WAKE");
+  action = plan.actions.find((item) => item.slot === "session-01");
+  assert.strictEqual(action.action, "continue_task");
+  assert.strictEqual(action.reason, "task_active");
+  assert.match(action.prompt, /Continue your active Codextrator task/);
+  assert.strictEqual(action.adapter_request.adapter, "codex-app-server");
+  assert.deepStrictEqual(action.adapter_request.requires, ["app_server_thread_id"]);
+
   const parentRoot = path.join(tmpRoot, "parent-root");
   const legacyStore = path.join(parentRoot, ".auralis-codextrator");
   fs.mkdirSync(legacyStore, { recursive: true });

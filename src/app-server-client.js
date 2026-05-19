@@ -101,7 +101,11 @@ async function sendTurnToThread(opts = {}) {
   });
   evidence.thread_id = opts.threadId;
   evidence.client_options = {
-    approveCodextratorMcp: opts.approveCodextratorMcp === true
+    approveCodextratorMcp: opts.approveCodextratorMcp === true,
+    approveSafeCommands: opts.approveSafeCommands === true,
+    commandApprovalCwd: opts.commandApprovalCwd
+      ? path.resolve(opts.commandApprovalCwd)
+      : (opts.turnCwd ? path.resolve(opts.turnCwd) : cwd)
   };
 
   try {
@@ -165,6 +169,7 @@ function makeEvidence(input) {
     events: [],
     responses: {},
     elicitation_responses: [],
+    command_approval_responses: [],
     agent_text: "",
     stderr_tail: []
   };
@@ -252,6 +257,7 @@ function makeClient(ws, evidence) {
   let nextId = 1;
   const pending = new Map();
   const opts = evidence.client_options || {};
+  const commandItems = new Map();
   ws.addEventListener("message", (event) => {
     let message;
     try {
@@ -262,6 +268,9 @@ function makeClient(ws, evidence) {
     if (message.method) {
       if (message.method === "item/agentMessage/delta" && message.params && message.params.delta) {
         evidence.agent_text += message.params.delta;
+      }
+      if (message.method === "item/started" && message.params && message.params.item && message.params.item.type === "commandExecution") {
+        commandItems.set(message.params.item.id, message.params.item);
       }
       evidence.events.push({
         at: new Date().toISOString(),
@@ -277,6 +286,18 @@ function makeClient(ws, evidence) {
           method: message.method,
           decision: response ? response.action : "unhandled",
           params: summarizeParams(message.method, message.params)
+        });
+        if (response) ws.send(JSON.stringify({ id: message.id, result: response }));
+      }
+      if (message.method === "item/commandExecution/requestApproval" && hasJsonRpcId(message)) {
+        const params = enrichCommandApprovalParams(message.params, commandItems);
+        const response = decideCommandApprovalResponse(params, opts);
+        evidence.command_approval_responses.push({
+          at: new Date().toISOString(),
+          id: message.id,
+          method: message.method,
+          decision: response ? response.decision : "unhandled",
+          params: summarizeParams(message.method, params)
         });
         if (response) ws.send(JSON.stringify({ id: message.id, result: response }));
       }
@@ -352,6 +373,22 @@ function summarizeParams(method, params) {
       tool: toolApproval ? toolApproval.tool : null
     };
   }
+  if (method === "item/commandExecution/requestApproval") {
+    const commandApproval = parseCommandApproval(params);
+    return {
+      threadId: params.threadId || null,
+      turnId: params.turnId || null,
+      itemId: params.itemId || null,
+      approvalId: params.approvalId || null,
+      reason: params.reason || null,
+      cwd: params.cwd || null,
+      command: commandApproval ? commandApproval.argv : null,
+      commandActions: params.commandActions || null,
+      availableDecisions: params.availableDecisions || null,
+      additionalPermissions: params.additionalPermissions || null,
+      networkApprovalContext: params.networkApprovalContext || null
+    };
+  }
   if (params.thread) {
     return {
       threadId: params.thread.id,
@@ -382,6 +419,13 @@ function summarizeParams(method, params) {
       status: params.item.status || null
     };
     if (params.item.type === "agentMessage") summary.text = params.item.text || "";
+    if (params.item.type === "commandExecution") {
+      summary.command = params.item.command || null;
+      summary.cwd = params.item.cwd || null;
+      summary.source = params.item.source || null;
+      summary.exitCode = params.item.exitCode || null;
+      summary.error = params.item.error || null;
+    }
     if (params.item.type === "mcpToolCall") {
       summary.server = params.item.server || null;
       summary.tool = params.item.tool || null;
@@ -419,6 +463,19 @@ function decideMcpElicitationResponse(params, opts = {}) {
   };
 }
 
+function decideCommandApprovalResponse(params, opts = {}) {
+  if (!opts.approveSafeCommands) return null;
+  const decline = makeCommandDecision(params, "decline");
+  const request = parseCommandApproval(params);
+  if (!request || !request.cwd || !request.argv || request.argv.length === 0) return decline;
+  if (!decisionAvailable(params, "accept")) return decline;
+  const root = opts.commandApprovalCwd || opts.turnCwd || opts.cwd;
+  if (!root || !isPathInside(request.cwd, root)) return decline;
+  const safeArgv = unwrapCommandArgv(request.argv);
+  if (!safeArgv || !isSafeGitCommand(safeArgv)) return decline;
+  return { decision: "accept" };
+}
+
 function parseMcpToolApproval(params = {}) {
   const message = String(params.message || "");
   const parsed = message.match(/^Allow the ([^"]+?) MCP server to run tool "([^"]+)"\?$/);
@@ -426,6 +483,141 @@ function parseMcpToolApproval(params = {}) {
   const tool = params.tool || params.toolName || (parsed && parsed[2]) || null;
   if (!serverName || !tool) return null;
   return { serverName, tool };
+}
+
+function parseCommandApproval(params = {}) {
+  const argv = normalizeCommandArgv(params.command);
+  if (!argv) return null;
+  return {
+    argv,
+    cwd: params.cwd ? path.resolve(String(params.cwd)) : null
+  };
+}
+
+function enrichCommandApprovalParams(params = {}, commandItems = new Map()) {
+  const item = params.itemId ? commandItems.get(params.itemId) : null;
+  if (!item) return params || {};
+  return {
+    command: item.command,
+    cwd: item.cwd,
+    ...params
+  };
+}
+
+function normalizeCommandArgv(command) {
+  if (Array.isArray(command)) {
+    const argv = command.map((item) => String(item));
+    return argv.every((item) => item && !/[\r\n]/.test(item)) ? argv : null;
+  }
+  if (command && Array.isArray(command.argv)) return normalizeCommandArgv(command.argv);
+  if (command && Array.isArray(command.args)) return normalizeCommandArgv(command.args);
+  if (command && typeof command.command === "string") return normalizeCommandArgv(command.command);
+  if (typeof command !== "string") return null;
+  return splitCommandLine(command);
+}
+
+function splitCommandLine(input) {
+  if (!input || /[\r\n`]/.test(input)) return null;
+  const argv = [];
+  let current = "";
+  let quote = null;
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index];
+    if (!quote && "|&;<>".includes(char)) return null;
+    if ((char === "\"" || char === "'") && (!quote || quote === char)) {
+      quote = quote ? null : char;
+      continue;
+    }
+    if (!quote && /\s/.test(char)) {
+      if (current) {
+        argv.push(current);
+        current = "";
+      }
+      continue;
+    }
+    current += char;
+  }
+  if (quote) return null;
+  if (current) argv.push(current);
+  return argv.length > 0 ? argv : null;
+}
+
+function isSafeGitCommand(argv) {
+  const command = executableName(argv[0]);
+  if (command !== "git") return false;
+  const subcommand = argv[1];
+  if (subcommand === "status") {
+    return argv.length >= 3 && argv.slice(2).every((arg) => [
+      "--short",
+      "-s",
+      "--porcelain",
+      "--porcelain=v1",
+      "--branch",
+      "-b"
+    ].includes(arg));
+  }
+  if (subcommand === "diff") {
+    if (argv.length === 2) return true;
+    if (argv[2] === "--check") {
+      if (argv.length === 3) return true;
+      return argv[3] === "--" && argv.slice(4).length > 0 && argv.slice(4).every(isSafeRelativePath);
+    }
+    return argv[2] === "--" && argv.slice(3).length > 0 && argv.slice(3).every(isSafeRelativePath);
+  }
+  if (subcommand === "add") {
+    const paths = argv[2] === "--" ? argv.slice(3) : argv.slice(2);
+    return paths.length > 0 && paths.every((item) => !String(item).startsWith("-") && isSafeRelativePath(item));
+  }
+  if (subcommand === "commit") {
+    return argv.length === 4 &&
+      ["-m", "--message"].includes(argv[2]) &&
+      Boolean(argv[3]) &&
+      !/[\r\n]/.test(argv[3]);
+  }
+  return false;
+}
+
+function unwrapCommandArgv(argv) {
+  const command = executableName(argv[0]);
+  if (command !== "pwsh" && command !== "powershell") return argv;
+  if (argv.length !== 3 || !["-command", "-c", "/c"].includes(String(argv[1]).toLowerCase())) return null;
+  return normalizeCommandArgv(argv[2]);
+}
+
+function executableName(value) {
+  const base = path.basename(String(value || "")).toLowerCase();
+  return base.endsWith(".exe") ? base.slice(0, -4) : base;
+}
+
+function isSafeRelativePath(value) {
+  const item = String(value || "").replace(/\\/g, "/");
+  if (!item || item === "." || item === "..") return false;
+  if (item.includes("*") || item.includes("?")) return false;
+  if (path.isAbsolute(item)) return false;
+  if (item.startsWith("../") || item.includes("/../")) return false;
+  if (item === ".git" || item.startsWith(".git/") || item.includes("/.git/")) return false;
+  return true;
+}
+
+function isPathInside(target, root) {
+  const normalizedTarget = path.resolve(String(target)).toLowerCase();
+  const normalizedRoot = path.resolve(String(root)).toLowerCase();
+  return normalizedTarget === normalizedRoot || normalizedTarget.startsWith(`${normalizedRoot}${path.sep}`);
+}
+
+function makeCommandDecision(params, decision) {
+  if (decisionAvailable(params, decision)) return { decision };
+  if (decision === "decline" && decisionAvailable(params, "cancel")) return { decision: "cancel" };
+  return null;
+}
+
+function decisionAvailable(params = {}, decision) {
+  const available = params.availableDecisions;
+  if (!Array.isArray(available) || available.length === 0) return true;
+  return available.some((item) => (
+    item === decision ||
+    (item && typeof item === "object" && (item.decision === decision || item.type === decision || item.name === decision))
+  ));
 }
 
 function hasJsonRpcId(message = {}) {
@@ -445,6 +637,7 @@ module.exports = {
   runProof,
   sendTurnToThread,
   makeAppServerUrl,
+  decideCommandApprovalResponse,
   decideMcpElicitationResponse,
   hasJsonRpcId
 };

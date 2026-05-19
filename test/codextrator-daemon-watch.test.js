@@ -40,6 +40,33 @@ function setupSlot(input = {}) {
   return storeDir;
 }
 
+function setupActiveSlot(input = {}) {
+  const storeDir = store.ensureStore(workspaceRoot, "coordinator");
+  const slot = input.slot || "session-04";
+  store.registerSlot(storeDir, {
+    slot,
+    project: "demo-project",
+    identity: "elian",
+    focus: "Daemon watch active task proof",
+    worktree,
+    branch: "codex/daemon-watch",
+    app_server_thread_id: input.threadId
+  });
+  store.recordHeartbeat(storeDir, {
+    slot,
+    status: "ok",
+    run_id: "daemon-watch-active-task-run"
+  });
+  store.createTask(storeDir, {
+    slot,
+    task_id: `${slot}-active-task`,
+    title: "Continue me",
+    message: "Active task continuation proof."
+  });
+  store.claimNextTask(storeDir, slot);
+  return storeDir;
+}
+
 function wakeFiles(storeDir) {
   return fs.readdirSync(path.join(storeDir, "wake"));
 }
@@ -138,7 +165,9 @@ try {
     heartbeatMaxMinutes: 60,
     promptMode: "work",
     sendTurnToThread: (input) => ({
-      ok: input.prompt.includes("If and only if a task.assign is present"),
+      ok: input.prompt.includes("If and only if a task.assign is present") &&
+        input.approveSafeCommands === true &&
+        path.resolve(input.commandApprovalCwd) === path.resolve(worktree),
       reason: "fake_completed",
       evidence: {
         thread_id: input.threadId,
@@ -156,6 +185,32 @@ try {
   assert.match(result.attempts[0].prompt, /If and only if a task\.assign is present/);
   assert.match(result.attempts[0].prompt, /Do not touch live\/v1 roots/);
   assert.strictEqual(wakeFiles(storeDir).length, 1);
+
+  fs.rmSync(path.join(workspaceRoot, ".auralis-codextrator"), { recursive: true, force: true });
+  storeDir = setupActiveSlot({ threadId: "thread-session-04" });
+  result = runDaemonWatchOnce({
+    root: workspaceRoot,
+    send: true,
+    heartbeatMaxMinutes: 60,
+    promptMode: "work",
+    sendTurnToThread: (input) => ({
+      ok: input.prompt.includes("Continue your active Codextrator task") &&
+        !input.prompt.includes("claim_next_task") &&
+        input.approveSafeCommands === true,
+      reason: "fake_completed",
+      evidence: {
+        thread_id: input.threadId,
+        turn_id: "fake-continue-turn",
+        url: "ws://127.0.0.1:9999",
+        finished_at: "2026-05-19T10:10:00.000Z",
+        agent_text: "OK"
+      }
+    })
+  });
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.summary.sent, 1);
+  assert.strictEqual(result.attempts[0].action, "continue_task");
+  assert.match(result.attempts[0].prompt, /Continue your active Codextrator task/);
 
   console.log("codextrator-daemon-watch.test.js: PASS");
 } finally {

@@ -17,7 +17,7 @@ function runDaemonWatchOnce(input = {}) {
   const send = input.send === true;
   const sender = input.sendTurnToThread || sendTurnToThread;
   const actions = plan.actions
-    .filter((action) => action.action === "wake_slot")
+    .filter((action) => action.action === "wake_slot" || action.action === "continue_task")
     .filter((action) => slots.size === 0 || slots.has(action.slot))
     .map((action) => withSelectedPrompt(action, input));
 
@@ -101,7 +101,9 @@ function runDaemonWatchOnce(input = {}) {
       effort: input.effort || "xhigh",
       approvalPolicy: input.approvalPolicy,
       timeoutMs: input.timeoutMs,
-      approveCodextratorMcp: hasExplicitSendPrompt(input)
+      approveCodextratorMcp: hasExplicitSendPrompt(input),
+      approveSafeCommands: hasExplicitSendPrompt(input),
+      commandApprovalCwd: action.worktree || root
     });
 
     if (turn && typeof turn.then === "function") {
@@ -125,7 +127,7 @@ async function runDaemonWatchOnceAsync(input = {}) {
   const send = input.send === true;
   const sender = input.sendTurnToThread || sendTurnToThread;
   const actions = plan.actions
-    .filter((action) => action.action === "wake_slot")
+    .filter((action) => action.action === "wake_slot" || action.action === "continue_task")
     .filter((action) => slots.size === 0 || slots.has(action.slot))
     .map((action) => withSelectedPrompt(action, input));
 
@@ -209,7 +211,9 @@ async function runDaemonWatchOnceAsync(input = {}) {
       effort: input.effort || "xhigh",
       approvalPolicy: input.approvalPolicy,
       timeoutMs: input.timeoutMs,
-      approveCodextratorMcp: hasExplicitSendPrompt(input)
+      approveCodextratorMcp: hasExplicitSendPrompt(input),
+      approveSafeCommands: hasExplicitSendPrompt(input),
+      commandApprovalCwd: action.worktree || root
     });
     recordTurnResult(storeDir, result, action, turn);
   }
@@ -260,6 +264,7 @@ function withPromptOverride(action, prompt) {
 
 function withSelectedPrompt(action, input) {
   if (input.prompt) return withPromptOverride(action, input.prompt);
+  if (action.action === "continue_task" && action.prompt) return action;
   if (isWorkPromptMode(input)) return withPromptOverride(action, buildWorkPrompt(action));
   return action;
 }
@@ -283,6 +288,7 @@ function summarizeTurnEvidence(evidence = {}) {
     interrupt: evidence.interrupt || null,
     interrupt_error: evidence.interrupt_error || null,
     elicitation_responses_tail: Array.isArray(evidence.elicitation_responses) ? evidence.elicitation_responses.slice(-6) : [],
+    command_approval_responses_tail: Array.isArray(evidence.command_approval_responses) ? evidence.command_approval_responses.slice(-6) : [],
     events_tail: Array.isArray(evidence.events) ? evidence.events.slice(-12) : [],
     stderr_tail: Array.isArray(evidence.stderr_tail) ? evidence.stderr_tail.slice(-6) : []
   };

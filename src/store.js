@@ -470,7 +470,7 @@ function buildWakePlan(store, input = {}) {
     heartbeatMaxMs,
     unread: unreadBySlot.get(slot.slot) || []
   }));
-  const wakeActions = actions.filter((action) => action.action === "wake_slot");
+  const wakeActions = actions.filter((action) => action.action === "wake_slot" || action.action === "continue_task");
   const notifyActions = actions.filter((action) => action.notify === true);
   const blockedActions = actions.filter((action) => action.blocked === true);
   const unsafeSlotActions = actions.filter((action) => action.slot !== "coordinator" && action.safe_to_assign === false);
@@ -574,10 +574,13 @@ function planWakeAction(slot, options) {
   }
 
   if (slot.current_task_status === "active") {
+    const prompt = buildSlotContinuePrompt(slot);
     return baseWakeAction(slot, {
       action: "continue_task",
       reason: "task_active",
-      safe_to_assign: false
+      safe_to_assign: false,
+      prompt,
+      adapter_request: buildAdapterRequest(slot, prompt, options.adapter)
     });
   }
 
@@ -637,6 +640,18 @@ function buildSlotWakePrompt(slot, unread) {
     "First read your inbox with mark_read=false, then call claim_next_task for your slot if a task is assigned.",
     "Work only inside your registered worktree, run focused tests, commit the slice, and report_commit back to coordinator.",
     subjectLine
+  ].join("\n");
+}
+
+function buildSlotContinuePrompt(slot) {
+  return [
+    `Continue your active Codextrator task for ${slot.slot}.`,
+    "Use the auralis-codextrator MCP tools for coordination.",
+    "First record_heartbeat for your slot with status ok.",
+    "Then inspect your active task/status; do not claim a new task.",
+    "Continue only the active task inside your registered worktree.",
+    "Run focused tests or checks, commit the slice, and report_commit back to coordinator.",
+    "If blocked, update_task with the blocker and stop."
   ].join("\n");
 }
 

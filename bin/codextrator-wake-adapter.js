@@ -50,7 +50,7 @@ async function run(opts) {
     checked_at: opts["checked-at"]
   });
   const selectedActions = plan.actions
-    .filter((action) => action.action === "wake_slot")
+    .filter((action) => action.action === "wake_slot" || action.action === "continue_task")
     .filter((action) => !opts.slot || action.slot === opts.slot)
     .map((action) => withPromptOverride(action, opts.prompt));
 
@@ -124,7 +124,9 @@ async function run(opts) {
       effort: opts.effort || "xhigh",
       approvalPolicy: opts["approval-policy"],
       timeoutMs: opts["timeout-ms"],
-      approveCodextratorMcp: true
+      approveCodextratorMcp: true,
+      approveSafeCommands: true,
+      commandApprovalCwd: action.worktree || root
     });
 
     const attempt = store.recordWakeAttempt(storeDir, {
@@ -163,6 +165,7 @@ function summarizeTurnEvidence(evidence = {}) {
     interrupt: evidence.interrupt || null,
     interrupt_error: evidence.interrupt_error || null,
     elicitation_responses_tail: Array.isArray(evidence.elicitation_responses) ? evidence.elicitation_responses.slice(-6) : [],
+    command_approval_responses_tail: Array.isArray(evidence.command_approval_responses) ? evidence.command_approval_responses.slice(-6) : [],
     events_tail: Array.isArray(evidence.events) ? evidence.events.slice(-12) : [],
     stderr_tail: Array.isArray(evidence.stderr_tail) ? evidence.stderr_tail.slice(-6) : []
   };
