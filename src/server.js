@@ -69,7 +69,9 @@ function tools() {
           worktree: { type: "string" },
           branch: { type: "string" },
           status: { type: "string" },
-          run_id: { type: "string" }
+          run_id: { type: "string" },
+          app_server_thread_id: { type: "string" },
+          app_server_url: { type: "string" }
         },
         required: ["slot", "project", "focus", "worktree"]
       }

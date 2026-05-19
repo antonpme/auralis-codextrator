@@ -49,7 +49,8 @@ args = ["E:/01-AURALIS/tools/auralis-codextrator/src/server.js", "--root", "E:/0
 MCP tools:
 
 - `get_status`: read slots, unread cursor counts, heartbeat, and task state.
-- `register_slot`: create or refresh a stable focus slot.
+- `register_slot`: create or refresh a stable focus slot. It can also store an
+  explicit `app_server_thread_id` for a Codex app-server wake adapter.
 - `send_message`: append a durable ledger message.
 - `read_inbox`: read unread messages through a cursor without deleting files.
 - `create_task`: queue a task and deliver a `task.assign` message.
@@ -77,9 +78,9 @@ cursor inbox, task, and heartbeat state, then returns one of:
 
 The tool is deliberately non-mutating. It does not claim tasks, clear inboxes,
 start Desktop automations, or create Codex app-server turns. With
-`adapter: "codex-app-server"` it returns a dry-run `turn/start` request template
-and marks the missing `app_server_thread_id` requirement instead of guessing a
-thread id.
+`adapter: "codex-app-server"` it returns a ready `turn/start` request only for a
+slot that has an explicit `app_server_thread_id`; otherwise it stays in dry-run
+mode and marks the missing requirement instead of guessing a thread id.
 
 After an external helper performs a notify-only or app-server wake attempt, it
 can call `record_wake_attempt` to write an audit record under `wake/`.
@@ -113,6 +114,45 @@ a harmless `turn/start`, waits for `turn/completed`, verifies the final text,
 and then kills the app-server process tree. It defaults to `effort=low`; on this
 host `effort=minimal` failed because the current tool configuration included
 tools that are incompatible with minimal reasoning.
+
+### App-Server Wake Adapter
+
+The wake adapter is the first guarded sender. It reads the same MCP wake plan,
+but defaults to dry-run and will not send a `turn/start` unless `--send` is
+present and the target slot already has an explicit `app_server_thread_id`.
+
+Dry-run:
+
+```powershell
+node E:\01-AURALIS\tools\auralis-codextrator\bin\codextrator-wake-adapter.js `
+  --root E:\01-AURALIS `
+  --json `
+  --dry-run
+```
+
+Send mode:
+
+```powershell
+node E:\01-AURALIS\tools\auralis-codextrator\bin\codextrator-wake-adapter.js `
+  --root E:\01-AURALIS `
+  --slot session-01 `
+  --json `
+  --send
+```
+
+If a send is attempted without a registered app-server thread id, the adapter
+records a blocked wake attempt under `wake/` with
+`reason=missing_app_server_thread_id` and exits non-zero. Dry-run mode does not
+write wake attempts.
+
+For a harmless loopback proof through a temporary read-only thread:
+
+```powershell
+node E:\01-AURALIS\tools\auralis-codextrator\bin\codextrator-wake-adapter.js `
+  --test-thread `
+  --json `
+  --effort low
+```
 
 ## Quick Start
 

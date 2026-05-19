@@ -204,6 +204,12 @@ function registerSlot(store, input) {
     status: input.status || previous.status || "active",
     inbox: `cursors/${input.slot}.json`,
     run_id: input.run_id || previous.run_id || null,
+    app_server_thread_id: input.app_server_thread_id !== undefined
+      ? (input.app_server_thread_id || null)
+      : (previous.app_server_thread_id || null),
+    app_server_url: input.app_server_url !== undefined
+      ? (input.app_server_url || null)
+      : (previous.app_server_url || null),
     updated_at: now()
   };
   writeRegistry(store, registry);
@@ -602,12 +608,18 @@ function baseWakeAction(slot, input) {
     blocked: input.blocked === true,
     safe_to_assign: input.safe_to_assign === true,
     status: slot.status || "",
+    project: slot.project || "",
+    focus: slot.focus || "",
+    worktree: slot.worktree || "",
+    branch: slot.branch || "",
     unread: slot.unread || 0,
     current_task_id: slot.current_task_id || null,
     current_task_status: slot.current_task_status || null,
     heartbeat_status: slot.heartbeat_status || null,
     heartbeat_checked_at: slot.heartbeat_checked_at || null,
     run_id: slot.run_id || null,
+    app_server_thread_id: slot.app_server_thread_id || null,
+    app_server_url: slot.app_server_url || null,
     prompt: input.prompt || null,
     adapter_request: input.adapter_request || null
   };
@@ -634,6 +646,19 @@ function buildAdapterRequest(slot, prompt, adapter) {
       adapter: "notify-only",
       mode: "dry-run",
       prompt
+    };
+  }
+  if (slot.app_server_thread_id) {
+    return {
+      adapter: "codex-app-server",
+      mode: "ready",
+      method: "turn/start",
+      app_server_url: slot.app_server_url || null,
+      params: {
+        threadId: slot.app_server_thread_id,
+        input: [{ type: "text", text: prompt }]
+      },
+      note: "Ready only because the slot has an explicit app-server thread id."
     };
   }
   return {
@@ -680,6 +705,7 @@ function buildStatus(store) {
       identity: session.identity || "",
       project: session.project || "",
       focus: session.focus || "",
+      worktree: session.worktree || "",
       branch: session.branch || "",
       status: session.status || "",
       unread: unreadMessages(store, slot).length,
@@ -690,6 +716,8 @@ function buildStatus(store) {
       heartbeat_status: session.heartbeat_status || null,
       heartbeat_checked_at: session.heartbeat_checked_at || null,
       run_id: session.run_id || null,
+      app_server_thread_id: session.app_server_thread_id || null,
+      app_server_url: session.app_server_url || null,
       thread_id: null
     };
   });

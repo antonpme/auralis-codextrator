@@ -126,6 +126,7 @@ async function callTool(id, name, args) {
     assert.strictEqual(session.current_task_id, "mcp-task-1");
     assert.strictEqual(session.current_task_status, "queued");
     assert.strictEqual(session.thread_id, null);
+    assert.strictEqual(session.app_server_thread_id, null);
 
     let wakePlan = await callTool(101, "plan_wake", {
       heartbeat_max_minutes: 60
@@ -145,6 +146,32 @@ async function callTool(id, name, args) {
     assert.strictEqual(wakeAction.adapter_request.adapter, "codex-app-server");
     assert.deepStrictEqual(wakeAction.adapter_request.requires, ["app_server_thread_id"]);
     assert.strictEqual(wakeAction.adapter_request.method, "turn/start");
+
+    await callTool(105, "register_slot", {
+      slot: "session-01",
+      project: "demo-project",
+      identity: "elian",
+      focus: "MCP slice",
+      worktree,
+      branch: "codex/mcp-demo",
+      app_server_thread_id: "019e-test-thread",
+      app_server_url: "ws://127.0.0.1:4575"
+    });
+
+    status = await callTool(106, "get_status", {});
+    session = status.slots.find((slot) => slot.slot === "session-01");
+    assert.strictEqual(session.app_server_thread_id, "019e-test-thread");
+    assert.strictEqual(session.app_server_url, "ws://127.0.0.1:4575");
+
+    const readyAppServerPlan = await callTool(107, "plan_wake", {
+      adapter: "codex-app-server",
+      heartbeat_max_minutes: 60
+    });
+    wakeAction = readyAppServerPlan.actions.find((action) => action.slot === "session-01");
+    assert.strictEqual(wakeAction.adapter_request.adapter, "codex-app-server");
+    assert.strictEqual(wakeAction.adapter_request.mode, "ready");
+    assert.strictEqual(wakeAction.adapter_request.params.threadId, "019e-test-thread");
+    assert.deepStrictEqual(wakeAction.adapter_request.params.input, [{ type: "text", text: wakeAction.prompt }]);
 
     const wakeAttempt = await callTool(102, "record_wake_attempt", {
       slot: "session-01",
