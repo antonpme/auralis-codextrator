@@ -554,8 +554,9 @@ function decideCommandApprovalResponse(params, opts = {}) {
   if (!decisionAvailable(params, "accept")) return decline;
   const root = opts.commandApprovalCwd || opts.turnCwd || opts.cwd;
   if (!root || !isPathInside(request.cwd, root)) return decline;
+  if (isSafePowerShellReadOnlyCommand(request.argv)) return { decision: "accept" };
   const safeArgv = unwrapCommandArgv(request.argv);
-  if (!safeArgv || !isSafeGitCommand(safeArgv)) return decline;
+  if (!safeArgv || !isSafeWorkerCommand(safeArgv)) return decline;
   return { decision: "accept" };
 }
 
@@ -625,10 +626,17 @@ function splitCommandLine(input) {
   return argv.length > 0 ? argv : null;
 }
 
+function isSafeWorkerCommand(argv) {
+  return isSafeGitCommand(argv) || isSafeNodeCommand(argv) || isSafeRipgrepCommand(argv);
+}
+
 function isSafeGitCommand(argv) {
   const command = executableName(argv[0]);
   if (command !== "git") return false;
   const subcommand = argv[1];
+  if (subcommand === "ls-files") {
+    return argv.length === 2 || argv.slice(2).every(isSafeRelativePath);
+  }
   if (subcommand === "status") {
     return argv.length >= 3 && argv.slice(2).every((arg) => [
       "--short",
@@ -660,6 +668,44 @@ function isSafeGitCommand(argv) {
   return false;
 }
 
+function isSafeNodeCommand(argv) {
+  const command = executableName(argv[0]);
+  if (command !== "node") return false;
+  if (argv.length === 3 && argv[1] === "--check") return isSafeScriptPath(argv[2]);
+  if (argv.length === 2) return isSafeScriptPath(argv[1]);
+  return false;
+}
+
+function isSafeRipgrepCommand(argv) {
+  const command = executableName(argv[0]);
+  if (command !== "rg") return false;
+  if (argv.length >= 2 && argv[1] === "--files") {
+    return argv.length === 2 || argv.slice(2).every(isSafeRelativePath);
+  }
+  if (argv.length >= 4 && (argv[1] === "-n" || argv[1] === "--line-number")) {
+    return argv.slice(3).every(isSafeRelativePath);
+  }
+  return false;
+}
+
+function isSafePowerShellReadOnlyCommand(argv) {
+  const command = executableName(argv[0]);
+  if (command !== "pwsh" && command !== "powershell") return false;
+  if (argv.length !== 3 || !["-command", "-c", "/c"].includes(String(argv[1]).toLowerCase())) return false;
+  const script = String(argv[2] || "").trim();
+  if (!script || /[;&<>`]/.test(script)) return false;
+
+  const childList = script.match(/^Get-ChildItem\s+(?:-Recurse\s+)?-File\s+([A-Za-z0-9_./\\,-]+)(?:\s*\|\s*ForEach-Object\s*\{\s*\$_\.FullName(?:\.Substring\(\$PWD\.Path\.Length\s*\+\s*1\))?\s*\})?$/);
+  if (childList) {
+    return childList[1].split(",").every(isSafeRelativePath);
+  }
+
+  const contentRead = script.match(/^Get-Content\s+(?:-Raw\s+)?([A-Za-z0-9_./\\-]+)$/);
+  if (contentRead) return isSafeRelativePath(contentRead[1]);
+
+  return false;
+}
+
 function unwrapCommandArgv(argv) {
   const command = executableName(argv[0]);
   if (command !== "pwsh" && command !== "powershell") return argv;
@@ -680,6 +726,11 @@ function isSafeRelativePath(value) {
   if (item.startsWith("../") || item.includes("/../")) return false;
   if (item === ".git" || item.startsWith(".git/") || item.includes("/.git/")) return false;
   return true;
+}
+
+function isSafeScriptPath(value) {
+  const item = String(value || "");
+  return isSafeRelativePath(item) && item.replace(/\\/g, "/").endsWith(".js");
 }
 
 function isPathInside(target, root) {

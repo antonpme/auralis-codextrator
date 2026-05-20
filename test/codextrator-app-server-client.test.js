@@ -132,6 +132,50 @@ assert.deepStrictEqual(decision, { decision: "accept" });
 
 decision = decideCommandApprovalResponse({
   ...commandApproval,
+  command: [
+    "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "-Command",
+    "git ls-files docs/interfaces prototypes"
+  ]
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
+  command: [
+    "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "-Command",
+    "Get-ChildItem -Recurse -File docs,prototypes | ForEach-Object { $_.FullName.Substring($PWD.Path.Length + 1) }"
+  ]
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
+  command: "node prototypes/context-engine/test-context-engine.js"
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
+  command: "node --check prototypes/context-engine/index.js"
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
   command: ["git", "commit", "-m", "docs: record daemon loop proof"]
 }, {
   approveSafeCommands: true,
@@ -163,7 +207,11 @@ for (const unsafeCommand of [
   "git reset --hard",
   "git push origin main",
   "git commit -am unsafe",
-  "git diff --check && git push"
+  "git diff --check && git push",
+  "node -e \"require('fs').writeFileSync('x','y')\"",
+  "node ../outside.js",
+  "Get-ChildItem -Recurse -File ..",
+  "Get-ChildItem -Recurse -File docs | Remove-Item"
 ]) {
   decision = decideCommandApprovalResponse({
     ...commandApproval,
