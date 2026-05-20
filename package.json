@@ -1,12 +1,14 @@
 {
   "name": "auralis-codextrator",
-  "version": "0.3.0",
-  "description": "Parallel session orchestration and shared focus-board coordination for Codex.",
+  "version": "0.4.0",
+  "description": "Parallel session orchestration, shared focus-board coordination, and a local admin dashboard for Codex.",
   "license": "MIT",
   "private": false,
   "bin": {
     "codextrator": "./bin/codextrator.js",
+    "codextrator-admin": "./bin/codextrator-admin.js",
     "codextrator-app-server-proof": "./bin/codextrator-app-server-proof.js",
+    "codextrator-app-thread-start": "./bin/codextrator-app-thread-start.js",
     "codextrator-app-thread-discover": "./bin/codextrator-app-thread-discover.js",
     "codextrator-daemon-watch": "./bin/codextrator-daemon-watch.js",
     "codextrator-mcp-watch": "./bin/codextrator-mcp-watch.js",
@@ -14,7 +16,7 @@
   },
   "scripts": {
     "smoke": "node ./bin/codextrator.js --help",
-    "test": "node ./test/codextrator-focus-board.test.js && node ./test/codextrator-cli.test.js && node ./test/codextrator-mcp.test.js && node ./test/codextrator-watch.test.js && node ./test/codextrator-wake-adapter.test.js && node ./test/codextrator-app-thread-discovery.test.js && node ./test/codextrator-daemon-watch.test.js && node ./test/codextrator-app-server-client.test.js"
+    "test": "node ./test/codextrator-focus-board.test.js && node ./test/codextrator-admin.test.js && node ./test/codextrator-cli.test.js && node ./test/codextrator-mcp.test.js && node ./test/codextrator-watch.test.js && node ./test/codextrator-wake-adapter.test.js && node ./test/codextrator-app-thread-discovery.test.js && node ./test/codextrator-daemon-watch.test.js && node ./test/codextrator-app-server-client.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1"

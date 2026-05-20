@@ -14,6 +14,9 @@ task system, and it is not tied to one project. A project such as
 - MCP ledger is durable task and message truth.
 - Focus Board is the shared visible backlog: milestones, lanes, assignments,
   task progress, reports, and integration receipts.
+- Browser admin dashboard is a read-only human visibility surface over that
+  ledger; it is not a second coordinator and should not mutate task/session
+  state.
 - Codex app-server is the wake adapter.
 - Desktop cron is not the backbone.
 - Coordinator manages backlog and assignments.

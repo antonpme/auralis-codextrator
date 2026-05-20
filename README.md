@@ -18,6 +18,8 @@ and branch live in the registry metadata.
 - Durable task records.
 - Shared Focus Board with milestones, lanes, assignments, reports, and
   integration receipts.
+- Read-only browser admin dashboard for slots, tasks, current work, milestones,
+  and wake-plan state.
 - Slot registry view with current task and heartbeat state.
 - Structured message ledger.
 - Heartbeat health records and recovery summary.
@@ -87,6 +89,28 @@ MCP tools:
 Design boundary: Codex automations should not be the primary transport for
 focus-slot work. If used later, they should only act as an external watchdog.
 Actual coordination should happen through the MCP inbox/task/report tools.
+
+### Browser Admin Dashboard
+
+`codextrator-admin` starts a local read-only dashboard over the same durable
+MCP ledger. It does not assign tasks, clear inboxes, wake sessions, mutate
+Codex Desktop state, or integrate commits. Use it when humans need visibility
+without keeping worker chats open in the Codex Desktop sidebar.
+
+```powershell
+node .\bin\codextrator-admin.js `
+  --root C:\codextrator-ledger `
+  --port 8787
+```
+
+Open the printed local URL in a browser. The dashboard shows:
+
+- active slots, project/focus, heartbeat, inbox, current task, and app-server
+  thread readiness;
+- task pool filtered by open, reported, integrated, or all tasks;
+- current work per slot, including idle/safe-to-assign wake-plan state;
+- milestones and task-count progress;
+- the latest non-mutating `plan_wake` decision.
 
 ### Wake Watcher Proof
 
@@ -181,6 +205,20 @@ node .\bin\codextrator-wake-adapter.js `
 ```
 
 ### App-Thread Discovery
+
+To create a new persistent headless app-server thread for a slot:
+
+```powershell
+node .\bin\codextrator-app-thread-start.js `
+  --slot session-01 `
+  --cwd C:\workspace\worktrees\session-01 `
+  --json
+```
+
+The command prints the new thread id and verifies the thread can answer a
+readiness turn. It does not mutate the Codextrator registry by itself; register
+the returned id with `register_slot` or run discovery/apply afterward. This
+keeps thread creation separate from durable slot metadata.
 
 `codextrator-app-thread-discover` scans local Codex Desktop session JSONL files
 and proposes app-server thread ids for slots whose startup prompts explicitly

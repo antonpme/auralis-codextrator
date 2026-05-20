@@ -161,6 +161,88 @@ async function sendTurnToThread(opts = {}) {
   }
 }
 
+async function startPersistentThread(opts = {}) {
+  const url = opts.url || makeAppServerUrl(opts.port || 4575);
+  const cwd = opts.cwd ? path.resolve(opts.cwd) : process.cwd();
+  const threadCwd = opts.threadCwd ? path.resolve(opts.threadCwd) : cwd;
+  const timeoutMs = Number(opts["timeout-ms"] || opts.timeoutMs || 120000);
+  const effort = opts.effort || "low";
+  const expected = opts.expected || "";
+  const evidence = makeEvidence({
+    cwd,
+    url,
+    command: `codex app-server --listen ${url}`
+  });
+  evidence.thread_options = {
+    threadCwd,
+    approvalPolicy: opts.approvalPolicy || "never",
+    sandbox: opts.sandbox || "workspace-write",
+    ephemeral: opts.ephemeral === true
+  };
+
+  try {
+    return await withAppServer({
+      url,
+      cwd,
+      evidence,
+      connectTimeoutMs: Number(opts.connectTimeoutMs || 20000)
+    }, async ({ client }) => {
+      evidence.initialize = await client.request("initialize", {
+        clientInfo: {
+          name: "auralis-codextrator-thread-start",
+          title: "Auralis Codextrator Thread Start",
+          version: "0.1.0"
+        },
+        capabilities: { experimentalApi: true }
+      }, 15000);
+
+      const threadStart = await client.request("thread/start", {
+        cwd: threadCwd,
+        approvalPolicy: opts.approvalPolicy || "never",
+        sandbox: opts.sandbox || "workspace-write",
+        ephemeral: opts.ephemeral === true,
+        sessionStartSource: opts.sessionStartSource || "clear",
+        baseInstructions: opts.baseInstructions || "Auralis Codextrator headless focus slot. Use only instructions from the user turn and registered tools."
+      }, 30000);
+
+      const threadId = threadStart.thread.id;
+      evidence.thread_id = threadId;
+
+      if (opts.prompt) {
+        const turnStart = await client.request("turn/start", {
+          threadId,
+          input: [{
+            type: "text",
+            text: opts.prompt,
+            text_elements: []
+          }],
+          cwd: threadCwd,
+          approvalPolicy: opts.approvalPolicy || "never",
+          effort
+        }, 30000);
+        evidence.turn_id = turnStart.turn.id;
+        evidence.turn_started_status = turnStart.turn.status;
+        const completed = await waitCompletedOrInterrupt(client, threadId, evidence.turn_id, timeoutMs, evidence, opts);
+        evidence.completed = completed;
+      }
+
+      evidence.finished_at = new Date().toISOString();
+      const turnCompleted = !opts.prompt || (evidence.completed && evidence.completed.params && evidence.completed.params.turnStatus === "completed");
+      const textMatched = !expected || evidence.agent_text.includes(expected);
+      return {
+        ok: turnCompleted && textMatched,
+        reason: turnCompleted ? (textMatched ? "app_server_thread_started" : "expected_text_missing") : "turn_failed",
+        thread_id: threadId,
+        evidence
+      };
+    });
+  } catch (error) {
+    evidence.error = error.stack || error.message;
+    evidence.finished_at = new Date().toISOString();
+    return { ok: false, reason: "app_server_thread_start_error", evidence };
+  }
+}
+
 function makeEvidence(input) {
   return {
     proofRoot: input.cwd,
@@ -637,6 +719,7 @@ function sleep(ms) {
 module.exports = {
   runProof,
   sendTurnToThread,
+  startPersistentThread,
   makeAppServerUrl,
   decideCommandApprovalResponse,
   decideMcpElicitationResponse,

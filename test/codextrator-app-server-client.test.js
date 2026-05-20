@@ -6,8 +6,11 @@ const path = require("path");
 const {
   decideCommandApprovalResponse,
   decideMcpElicitationResponse,
-  hasJsonRpcId
+  hasJsonRpcId,
+  startPersistentThread
 } = require("../src/app-server-client.js");
+
+assert.strictEqual(typeof startPersistentThread, "function");
 
 const heartbeatApproval = {
   threadId: "thread-session-04",

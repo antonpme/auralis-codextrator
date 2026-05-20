@@ -1,7 +1,7 @@
 {
   "name": "auralis-codextrator",
-  "version": "0.3.0",
-  "description": "Coordinate parallel Codex focus slots through a shared MCP ledger, app-server wake adapter, and Focus Board.",
+  "version": "0.4.0",
+  "description": "Coordinate parallel Codex focus slots through a shared MCP ledger, app-server wake adapter, Focus Board, and local admin dashboard.",
   "author": {
     "name": "Auralis"
   },
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Auralis Codextrator",
     "shortDescription": "Coordinate Codex focus slots with a shared board and MCP ledger",
-    "longDescription": "Auralis Codextrator provides a local MCP server, app-server wake adapter, and Focus Board for coordinating parallel Codex focus slots. Coordinators manage milestones, lanes, assignments, reports, and integration receipts while worker slots read the full progress snapshot and report their own work.",
+    "longDescription": "Auralis Codextrator provides a local MCP server, app-server wake adapter, Focus Board, and read-only browser admin dashboard for coordinating parallel Codex focus slots. Coordinators manage milestones, lanes, assignments, reports, and integration receipts while worker slots read the full progress snapshot and report their own work.",
     "developerName": "Auralis",
     "category": "Coding",
     "capabilities": [
