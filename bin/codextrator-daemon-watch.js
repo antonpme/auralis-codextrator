@@ -28,6 +28,7 @@ async function main() {
       port: opts.port,
       url: opts.url,
       effort: opts.effort,
+      sandbox: opts.sandbox,
       timeoutMs: opts["timeout-ms"],
       approvalPolicy: opts["approval-policy"],
       heartbeatMaxMinutes: opts["heartbeat-max-minutes"]
@@ -93,6 +94,7 @@ Usage:
                            [--loop --interval-ms N --max-cycles N]
                            [--slots session-01,session-02] [--send]
                            [--prompt TEXT | --prompt-mode work]
+                           [--sandbox MODE]
 
 Default mode is one dry-run cycle. It reads Codextrator MCP wake state and
 prints planned app-server wakes without mutating inboxes or tasks. With --send,

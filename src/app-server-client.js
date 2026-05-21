@@ -202,6 +202,7 @@ async function sendTurnToThread(opts = {}) {
       if (opts.effort) params.effort = opts.effort;
       if (opts.turnCwd) params.cwd = path.resolve(opts.turnCwd);
       if (opts.approvalPolicy) params.approvalPolicy = opts.approvalPolicy;
+      if (opts.sandbox) params.sandbox = opts.sandbox;
 
       const turnStart = await client.request("turn/start", params, 30000);
       evidence.turn_id = turnStart.turn.id;

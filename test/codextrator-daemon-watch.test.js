@@ -164,12 +164,14 @@ try {
     send: true,
     heartbeatMaxMinutes: 60,
     promptMode: "work",
+    sandbox: "danger-full-access",
     sendTurnToThread: (input) => ({
       ok: input.prompt.includes("If and only if a task.assign is present") &&
         input.approveSafeCommands === true &&
         path.resolve(input.commandApprovalCwd) === path.resolve(worktree) &&
         path.resolve(input.codextratorMcpRoot) === path.resolve(workspaceRoot) &&
-        input.codextratorMcpAgent === "session-04",
+        input.codextratorMcpAgent === "session-04" &&
+        input.sandbox === "danger-full-access",
       reason: "fake_completed",
       evidence: {
         thread_id: input.threadId,
@@ -195,12 +197,14 @@ try {
     send: true,
     heartbeatMaxMinutes: 60,
     promptMode: "work",
+    sandbox: "danger-full-access",
     sendTurnToThread: (input) => ({
       ok: input.prompt.includes("Continue your active Codextrator task") &&
         !input.prompt.includes("claim_next_task") &&
         input.approveSafeCommands === true &&
         path.resolve(input.codextratorMcpRoot) === path.resolve(workspaceRoot) &&
-        input.codextratorMcpAgent === "session-04",
+        input.codextratorMcpAgent === "session-04" &&
+        input.sandbox === "danger-full-access",
       reason: "fake_completed",
       evidence: {
         thread_id: input.threadId,
