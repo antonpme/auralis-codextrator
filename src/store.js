@@ -12,6 +12,8 @@ const PRODUCT_ID = "auralis-codenator";
 const LEGACY_PRODUCT_ID = "auralis-codextrator";
 const FOCUS_BOARD_NAME = "Auralis Codenator Focus Board";
 const FOCUS_BOARD_DESCRIPTION = "Shared backlog, milestones, lanes, assignments, reports, and integration receipts for Codenator focus slots.";
+const LEGACY_FOCUS_BOARD_NAME = "auralis codextrator focus board";
+const LEGACY_FOCUS_BOARD_DESCRIPTION = "shared backlog, milestones, lanes, assignments, reports, and integration receipts for codextrator focus slots.";
 const MINUTE_MS = 60 * 1000;
 const DEFAULT_HEARTBEAT_MAX_MINUTES = 15;
 const SUMMARY_PAUSE_MIN_INTEGRATIONS = 30;
@@ -369,10 +371,10 @@ function readFocusBoard(store) {
   }
   const board = readJson(file);
   const defaultBoard = defaultFocusBoard();
-  const normalizedName = board.name === "Auralis Codextrator Focus Board"
+  const normalizedName = String(board.name || "").toLowerCase() === LEGACY_FOCUS_BOARD_NAME
     ? defaultBoard.name
     : board.name;
-  const normalizedDescription = board.description === "Shared backlog, milestones, lanes, assignments, reports, and integration receipts for Codextrator focus slots."
+  const normalizedDescription = String(board.description || "").toLowerCase() === LEGACY_FOCUS_BOARD_DESCRIPTION
     ? defaultBoard.description
     : board.description;
   return {

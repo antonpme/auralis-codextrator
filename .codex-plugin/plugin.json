@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Auralis Codenator",
     "shortDescription": "Coordinate Codex focus slots with a shared board and MCP ledger",
-    "longDescription": "Auralis Codenator provides a local MCP server, app-server wake adapter, Focus Board, and read-only browser admin dashboard for coordinating parallel Codex focus slots. Coordinators manage milestones, lanes, assignments, reports, and integration receipts while worker slots read the full progress snapshot and report their own work. Legacy Codextrator command and store aliases remain supported for existing local ledgers.",
+    "longDescription": "Auralis Codenator provides a local MCP server, app-server wake adapter, Focus Board, and read-only browser admin dashboard for coordinating parallel Codex focus slots. Coordinators manage milestones, lanes, assignments, reports, and integration receipts while worker slots read the full progress snapshot and report their own work. Legacy codextrator command and store aliases remain supported for existing local ledgers.",
     "developerName": "Auralis",
     "category": "Coding",
     "capabilities": [

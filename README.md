@@ -6,9 +6,9 @@ Parallel session orchestration for Codex Desktop.
 focused Codex Desktop sessions across projects, worktrees, inboxes, hooks, and
 commit reports, and a shared Focus Board.
 
-The project was originally named Auralis Codextrator. Existing `codextrator`
-CLI commands, environment variables, and `.auralis-codextrator` store paths
-remain supported as legacy aliases so existing ledgers do not need migration.
+Existing `codextrator` CLI commands, environment variables, and
+`.auralis-codextrator` store paths remain supported as legacy aliases so
+existing ledgers do not need migration.
 
 It is intentionally not an agent identity system. A session slot such as
 `session-01` is only a technical focus slot. Identity, project, focus, worktree,
@@ -461,7 +461,7 @@ global Codex config.
   hooks/
 ```
 
-The store directory keeps the original `.auralis-codextrator` name for
+The store directory keeps the existing `.auralis-codextrator` name for
 compatibility. Treat it as Codenator-owned data.
 
 ## Design Notes

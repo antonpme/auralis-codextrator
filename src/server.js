@@ -285,7 +285,7 @@ async function main() {
     {
       capabilities: { tools: {} },
       instructions: [
-        "auralis-codenator coordinates Codex focus slots through MCP. Legacy Codextrator aliases remain supported.",
+        "auralis-codenator coordinates Codex focus slots through MCP. Legacy codextrator aliases remain supported.",
         "Use cursor-based inboxes and durable task state. Do not depend on Codex Desktop automation resume.",
         "Stable slot ids identify focus lanes; optional run_id identifies the currently live Codex session.",
         `This agent: ${config.agent}.`
