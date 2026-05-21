@@ -145,6 +145,33 @@ assert.deepStrictEqual(decision, { decision: "accept" });
 
 decision = decideCommandApprovalResponse({
   ...commandApproval,
+  command: "git rev-parse 313335f:docs/interfaces/cortex-context-receipt-bundle-v1.md"
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
+  command: "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -Command 'git hash-object --no-filters -- docs/interfaces/cortex-context-receipt-bundle-v1.md prototypes/context-receipt-bundle/context-receipt-bundle.test.js'"
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
+  command: "git clean -fd -- docs/interfaces/cortex-context-receipt-bundle-v1.md prototypes/context-receipt-bundle"
+}, {
+  approveSafeCommands: true,
+  commandApprovalCwd: worktree
+});
+assert.deepStrictEqual(decision, { decision: "accept" });
+
+decision = decideCommandApprovalResponse({
+  ...commandApproval,
   command: [
     "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "-Command",
@@ -207,6 +234,10 @@ for (const unsafeCommand of [
   "git reset --hard",
   "git push origin main",
   "git commit -am unsafe",
+  "git clean -fdx -- docs/interfaces",
+  "git clean -fd -- .",
+  "git rev-parse --verify HEAD",
+  "git hash-object E:/01-AURALIS/projects/auralis-cortex/file.js",
   "git diff --check && git push",
   "node -e \"require('fs').writeFileSync('x','y')\"",
   "node ../outside.js",

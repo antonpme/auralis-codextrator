@@ -655,6 +655,34 @@ function isSafeGitCommand(argv) {
     }
     return argv[2] === "--" && argv.slice(3).length > 0 && argv.slice(3).every(isSafeRelativePath);
   }
+  if (subcommand === "rev-parse") {
+    return argv.length >= 3 && argv.slice(2).every(isSafeGitObjectSpec);
+  }
+  if (subcommand === "hash-object") {
+    const args = argv.slice(2).filter((arg) => arg !== "--no-filters");
+    const paths = args[0] === "--" ? args.slice(1) : args;
+    return paths.length > 0 && paths.every((item) => !String(item).startsWith("-") && isSafeRelativePath(item));
+  }
+  if (subcommand === "ls-tree") {
+    if (argv.length < 3 || !isSafeGitObjectSpec(argv[2])) return false;
+    if (argv.length === 3) return true;
+    const rest = argv.slice(3);
+    const recursive = rest[0] === "-r" ? rest.slice(1) : rest;
+    if (recursive.length === 0) return true;
+    return recursive[0] === "--" && recursive.slice(1).length > 0 && recursive.slice(1).every(isSafeRelativePath);
+  }
+  if (subcommand === "clean") {
+    const separatorIndex = argv.indexOf("--");
+    if (separatorIndex < 0) return false;
+    const options = argv.slice(2, separatorIndex);
+    const paths = argv.slice(separatorIndex + 1);
+    const allowed = new Set(["-f", "--force", "-d", "-n", "--dry-run", "-fd", "-df", "-dn", "-nd"]);
+    return paths.length > 0 &&
+      options.length > 0 &&
+      options.every((arg) => allowed.has(arg)) &&
+      !options.some((arg) => arg.includes("x") || arg.includes("X")) &&
+      paths.every((item) => !String(item).startsWith("-") && isSafeRelativePath(item));
+  }
   if (subcommand === "add") {
     const paths = argv[2] === "--" ? argv.slice(3) : argv.slice(2);
     return paths.length > 0 && paths.every((item) => !String(item).startsWith("-") && isSafeRelativePath(item));
@@ -725,6 +753,15 @@ function isSafeRelativePath(value) {
   if (path.isAbsolute(item)) return false;
   if (item.startsWith("../") || item.includes("/../")) return false;
   if (item === ".git" || item.startsWith(".git/") || item.includes("/.git/")) return false;
+  return true;
+}
+
+function isSafeGitObjectSpec(value) {
+  const item = String(value || "");
+  if (!item || item.startsWith("-")) return false;
+  if (!/^[A-Za-z0-9_./:-]+$/.test(item)) return false;
+  if (item.includes("\\") || item.includes("..")) return false;
+  if (path.isAbsolute(item)) return false;
   return true;
 }
 
