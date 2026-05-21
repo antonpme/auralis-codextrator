@@ -241,6 +241,18 @@ function tools() {
       }
     },
     {
+      name: "record_summary_pause",
+      description: "Coordinator-only: record that Ton received the periodic integration summary pause, allowing wake and assignment to resume.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          summary: { type: "string" },
+          integration_count: { type: "number" },
+          subject: { type: "string" }
+        }
+      }
+    },
+    {
       name: "record_wake_attempt",
       description: "Persist the result of a planned wake attempt for audit/proof without changing task or inbox state.",
       inputSchema: {
@@ -331,6 +343,11 @@ async function main() {
           return ok({ heartbeat: store.recordHeartbeat(storeDir, args) });
         case "plan_wake":
           return ok(store.buildWakePlan(storeDir, args));
+        case "record_summary_pause":
+          return ok(store.recordSummaryPause(storeDir, {
+            ...args,
+            from: config.agent
+          }));
         case "record_wake_attempt":
           return ok({ attempt: store.recordWakeAttempt(storeDir, args) });
         default:

@@ -180,7 +180,7 @@ function renderHtml(input) {
     }
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
       margin-bottom: 14px;
     }
@@ -550,11 +550,17 @@ function renderHtml(input) {
     function renderMetrics(slots, tasks, openTasks, reportedTasks, wake) {
       const integrated = tasks.filter((task) => task.status === "integrated" || task.status === "done").length;
       const blocked = tasks.filter((task) => task.status === "blocked").length;
+      const pause = (wake.summary && wake.summary.coordinator_pause) || {};
+      const pauseRange = pause.range || {};
+      const pauseNote = pause.due
+        ? "Stop, summarize, then record the pause"
+        : (pause.integrations_since_pause || 0) + "/" + (pauseRange.recommended || 35) + " since last summary";
       const metrics = [
         ["Active Slots", slots.length, "Registered worker lanes"],
         ["Open Tasks", openTasks.length, "Queued, active, reported, or blocked"],
         ["Reports Waiting", reportedTasks.length, "Need coordinator verification"],
-        ["Integrated", integrated, blocked ? blocked + " blocked" : "All completed receipts"]
+        ["Integrated", integrated, blocked ? blocked + " blocked" : "All completed receipts"],
+        ["Summary Pause", pause.due ? "Due" : (pause.warning ? "Soon" : "Clear"), pauseNote]
       ];
       el("metrics").innerHTML = metrics.map(([label, value, note]) => \`
         <article class="metric">
@@ -659,8 +665,8 @@ function renderHtml(input) {
       const text = raw.replace(/_/g, " ");
       let kind = "info";
       if (["ok", "active", "integrated", "done", "headless ready", "idle healthy"].includes(raw)) kind = "ok";
-      if (["queued", "reported", "review", "notify", "wake_slot", "continue_task"].includes(raw)) kind = "warn";
-      if (["blocked", "failed", "stale", "missing", "blocked_restart_required"].includes(raw)) kind = "bad";
+      if (["queued", "reported", "review", "notify", "wake_slot", "continue_task", "summary_pause_hold"].includes(raw)) kind = "warn";
+      if (["blocked", "failed", "stale", "missing", "blocked_restart_required", "pause", "coordinator_summary_pause"].includes(raw)) kind = "bad";
       if (["idle", "idle_healthy"].includes(raw)) kind = "idle";
       return \`<span class="badge \${kind}">\${escapeHtml(text)}</span>\`;
     }

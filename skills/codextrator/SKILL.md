@@ -25,13 +25,18 @@ task system, and it is not tied to one project. A project such as
 ## Coordinator Workflow
 
 1. Call `get_status`, `get_focus_board`, and `read_inbox` for `coordinator`.
-2. Verify any `commit_report` before integration. Do not trust worker reports
+2. Check `progress.summary_pause` or `plan_wake.summary.coordinator_pause`.
+   At 30+ integrations since the last pause, prepare a short Ton summary. When
+   `plan_wake.decision` is `PAUSE`, stop the coordinator loop; do not wake or
+   assign more work until Ton has received the summary and
+   `record_summary_pause` has been called.
+3. Verify any `commit_report` before integration. Do not trust worker reports
    without focused tests in the source worktree and again after integration.
-3. Manage backlog with `upsert_milestone`, `upsert_lane`, and `create_task`.
-4. Assign only when a slot is healthy, idle, unread 0, and has no unintegrated
+4. Manage backlog with `upsert_milestone`, `upsert_lane`, and `create_task`.
+5. Assign only when a slot is healthy, idle, unread 0, and has no unintegrated
    report.
-5. Use `plan_wake` with `adapter="codex-app-server"` before waking slots.
-6. After integrating a report, call `update_task` with status `integrated`,
+6. Use `plan_wake` with `adapter="codex-app-server"` before waking slots.
+7. After integrating a report, call `update_task` with status `integrated`,
    the integration commit, and verification evidence.
 
 ## Worker Slot Workflow

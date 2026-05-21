@@ -54,6 +54,7 @@ async function main() {
     const snapshot = buildSnapshot(store, { heartbeatMaxMinutes: 60 });
     assert.strictEqual(snapshot.status.slots.find((slot) => slot.slot === "session-05").app_server_thread_id, "thread-headless-05");
     assert.strictEqual(snapshot.board.progress.total_tasks, 1);
+    assert.strictEqual(snapshot.board.progress.summary_pause.due, false);
     assert.strictEqual(snapshot.wake_plan.decision, "WAKE");
 
     const html = renderHtml({ pollMs: 1000, rootLabel: workspaceRoot });

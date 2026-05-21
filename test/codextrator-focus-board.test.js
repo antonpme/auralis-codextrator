@@ -99,6 +99,8 @@ try {
     integrated: 1,
     active: 1
   });
+  assert.strictEqual(coordinatorSnapshot.progress.summary_pause.integrated_count, 1);
+  assert.strictEqual(coordinatorSnapshot.progress.summary_pause.due, false);
   assert.strictEqual(coordinatorSnapshot.milestones[0].task_counts.integrated, 1);
   assert.strictEqual(coordinatorSnapshot.milestones[0].task_counts.active, 1);
   assert.strictEqual(coordinatorSnapshot.lanes.find((lane) => lane.lane_id === "process").owner_slot, "session-02");
@@ -114,6 +116,38 @@ try {
   assert.strictEqual(workerSnapshot.tasks.length, 2);
   assert.strictEqual(workerSnapshot.tasks.find((task) => task.task_id === "task-catalog-1").dependencies[0], "task-process-1");
   assert.strictEqual(workerSnapshot.tasks.find((task) => task.task_id === "task-process-1").status, "integrated");
+
+  for (let index = 0; index < 34; index += 1) {
+    const taskId = `bulk-integrated-${index}`;
+    storeApi.createTask(store, {
+      slot: "session-02",
+      task_id: taskId,
+      title: `Bulk integration ${index}`,
+      message: "Exercise the coordinator summary pause counter.",
+      project: "demo-project",
+      lane_id: "process",
+      milestone_id: "m1-foundation"
+    });
+    storeApi.updateTask(store, taskId, {
+      status: "integrated",
+      commit: `bulk${index}`
+    });
+  }
+
+  const pausePlan = storeApi.buildWakePlan(store, {
+    heartbeat_max_minutes: 60
+  });
+  assert.strictEqual(pausePlan.decision, "PAUSE");
+  assert.strictEqual(pausePlan.summary.coordinator_pause.integrations_since_pause, 35);
+  assert.ok(pausePlan.actions.some((action) => action.slot === "coordinator" && action.action === "coordinator_summary_pause"));
+  assert.strictEqual(pausePlan.actions.find((action) => action.slot === "session-02").action, "summary_pause_hold");
+
+  const pauseRecord = storeApi.recordSummaryPause(store, {
+    summary: "35 integrations closed; stopping for Ton summary."
+  });
+  assert.strictEqual(pauseRecord.marker.type, "coordinator.summary_pause");
+  assert.strictEqual(pauseRecord.policy.integrations_since_pause, 0);
+  assert.strictEqual(storeApi.buildWakePlan(store, { heartbeat_max_minutes: 60 }).decision === "PAUSE", false);
 
   console.log("codextrator-focus-board.test.js: PASS");
 } finally {

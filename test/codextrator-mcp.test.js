@@ -96,6 +96,7 @@ async function callTool(id, name, args) {
     assert.ok(toolNames.includes("claim_next_task"));
     assert.ok(toolNames.includes("report_commit"));
     assert.ok(toolNames.includes("plan_wake"));
+    assert.ok(toolNames.includes("record_summary_pause"));
     assert.ok(toolNames.includes("record_wake_attempt"));
     assert.ok(toolNames.includes("get_focus_board"));
     assert.ok(toolNames.includes("upsert_milestone"));
@@ -270,6 +271,13 @@ async function callTool(id, name, args) {
     session = status.slots.find((slot) => slot.slot === "session-01");
     assert.strictEqual(session.current_task_id, null);
     assert.strictEqual(session.current_task_status, "integrated");
+
+    const summaryPause = await callTool(14, "record_summary_pause", {
+      summary: "MCP test checkpoint summary."
+    });
+    assert.strictEqual(summaryPause.marker.type, "coordinator.summary_pause");
+    assert.strictEqual(summaryPause.policy.integrated_count, 1);
+    assert.strictEqual(summaryPause.policy.integrations_since_pause, 0);
 
     console.log("codextrator-mcp.test.js: PASS");
   } finally {

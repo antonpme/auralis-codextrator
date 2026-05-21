@@ -16,8 +16,8 @@ and branch live in the registry metadata.
 - Per-session inboxes.
 - Lightweight direct messages.
 - Durable task records.
-- Shared Focus Board with milestones, lanes, assignments, reports, and
-  integration receipts.
+- Shared Focus Board with milestones, lanes, assignments, reports, integration
+  receipts, and coordinator summary-pause state.
 - Read-only browser admin dashboard for slots, tasks, current work, milestones,
   and wake-plan state.
 - Slot registry view with current task and heartbeat state.
@@ -84,6 +84,8 @@ MCP tools:
 - `record_heartbeat`: record live-run health with `run_id`, not Desktop thread id.
 - `plan_wake`: build a safe MCP-ledger wake plan without mutating inboxes,
   tasks, or Codex Desktop threads.
+- `record_summary_pause`: record that the coordinator stopped and summarized
+  progress after the periodic integration threshold.
 - `record_wake_attempt`: persist notify-only or adapter wake proof records.
 
 Design boundary: Codex automations should not be the primary transport for
@@ -121,6 +123,9 @@ cursor inbox, task, and heartbeat state, then returns one of:
 - `NOTIFY`: coordinator attention or recovery is needed.
 - `WAKE`: one or more healthy slots have unread work and should be nudged by an
   external adapter.
+- `PAUSE`: the coordinator has reached the periodic summary threshold and must
+  stop, summarize for Ton, then call `record_summary_pause` before more wake or
+  assignment.
 
 The tool is deliberately non-mutating. It does not claim tasks, clear inboxes,
 start Desktop automations, or create Codex app-server turns. With
@@ -130,6 +135,13 @@ mode and marks the missing requirement instead of guessing a thread id.
 
 After an external helper performs a notify-only or app-server wake attempt, it
 can call `record_wake_attempt` to write an audit record under `wake/`.
+
+The coordinator summary-pause guard counts integrated or done tasks. After 35
+integrations since the last pause marker, `plan_wake` returns `PAUSE` and
+converts slot actions to `summary_pause_hold`. The recommended operating window
+is 30-40 integrations: use the Focus Board warning at 30 to prepare the brief
+summary, stop at 35, give Ton the summary, then call `record_summary_pause` to
+reset the counter.
 
 For local schedulers or a standalone daemon, use the CLI wrapper:
 

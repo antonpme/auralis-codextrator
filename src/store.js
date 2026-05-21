@@ -9,6 +9,10 @@ const STORE_NAME = ".auralis-codextrator";
 const MCP_ROOT_NAME = ".codextrator-mcp-root";
 const MINUTE_MS = 60 * 1000;
 const DEFAULT_HEARTBEAT_MAX_MINUTES = 15;
+const SUMMARY_PAUSE_MIN_INTEGRATIONS = 30;
+const SUMMARY_PAUSE_RECOMMENDED_INTEGRATIONS = 35;
+const SUMMARY_PAUSE_MAX_INTEGRATIONS = 40;
+const SUMMARY_PAUSE_TYPES = new Set(["coordinator.summary_pause", "summary_pause"]);
 
 function now() {
   return new Date().toISOString();
@@ -561,12 +565,116 @@ function recordHeartbeat(store, input) {
   return heartbeat;
 }
 
+function isIntegratedTask(task) {
+  return task.status === "integrated" || task.status === "done";
+}
+
+function buildSummaryPausePolicy(store, tasks = listTasks(store)) {
+  const integratedCount = tasks.filter((task) => isIntegratedTask(task)).length;
+  const markers = readLedger(store)
+    .filter((message) => SUMMARY_PAUSE_TYPES.has(message.type))
+    .map((message) => ({
+      seq: Number(message.seq || 0),
+      created_at: message.created_at || "",
+      integration_count: Number(message.payload && message.payload.integration_count)
+    }))
+    .filter((marker) => Number.isFinite(marker.integration_count))
+    .sort((a, b) => {
+      if (a.integration_count !== b.integration_count) return a.integration_count - b.integration_count;
+      return a.seq - b.seq;
+    });
+  const lastMarker = markers.length ? markers[markers.length - 1] : null;
+  const lastPauseCount = lastMarker
+    ? Math.min(lastMarker.integration_count, integratedCount)
+    : 0;
+  const integrationsSincePause = Math.max(0, integratedCount - lastPauseCount);
+  const due = integrationsSincePause >= SUMMARY_PAUSE_RECOMMENDED_INTEGRATIONS;
+  const warning = !due && integrationsSincePause >= SUMMARY_PAUSE_MIN_INTEGRATIONS;
+
+  return {
+    policy: "coordinator_summary_pause",
+    range: {
+      min: SUMMARY_PAUSE_MIN_INTEGRATIONS,
+      recommended: SUMMARY_PAUSE_RECOMMENDED_INTEGRATIONS,
+      max: SUMMARY_PAUSE_MAX_INTEGRATIONS
+    },
+    integrated_count: integratedCount,
+    last_pause_integration_count: lastPauseCount,
+    last_pause_at: lastMarker ? lastMarker.created_at : null,
+    integrations_since_pause: integrationsSincePause,
+    next_pause_at: lastPauseCount + SUMMARY_PAUSE_RECOMMENDED_INTEGRATIONS,
+    due,
+    warning,
+    action: due ? "stop_and_summarize" : (warning ? "prepare_summary_pause" : "continue"),
+    reason: due ? "summary_pause_due" : (warning ? "summary_pause_soon" : ""),
+    instructions: "When due, stop the coordinator loop, give Ton a brief summary, then call record_summary_pause before resuming wake or assignment."
+  };
+}
+
+function recordSummaryPause(store, input = {}) {
+  const tasks = listTasks(store);
+  const policy = buildSummaryPausePolicy(store, tasks);
+  const requestedCount = Number(input.integration_count);
+  const integrationCount = Number.isFinite(requestedCount)
+    ? requestedCount
+    : policy.integrated_count;
+  const summary = input.summary || "";
+  const marker = appendLedger(store, {
+    type: "coordinator.summary_pause",
+    from: input.from || "coordinator",
+    to: "coordinator",
+    subject: input.subject || `Coordinator summary pause at ${integrationCount} integrations`,
+    message: summary || "Coordinator stopped for the periodic summary pause.",
+    payload: {
+      integration_count: integrationCount,
+      integrations_since_pause: Math.max(0, integrationCount - policy.last_pause_integration_count),
+      threshold: SUMMARY_PAUSE_RECOMMENDED_INTEGRATIONS,
+      range: policy.range,
+      summary,
+      recorded_at: now()
+    }
+  });
+
+  return {
+    marker,
+    policy: buildSummaryPausePolicy(store, tasks)
+  };
+}
+
 function buildWakePlan(store, input = {}) {
   const checkedAt = input.checked_at || now();
   const heartbeatMaxMinutes = Number(input.heartbeat_max_minutes || DEFAULT_HEARTBEAT_MAX_MINUTES);
   const heartbeatMaxMs = heartbeatMaxMinutes * MINUTE_MS;
   const adapter = input.adapter || "notify-only";
   const status = buildStatus(store);
+  const summaryPause = buildSummaryPausePolicy(store, status.tasks);
+
+  if (summaryPause.due) {
+    const actions = status.slots.map((slot) => planSummaryPauseAction(slot, summaryPause));
+    return {
+      version: 1,
+      decision: "PAUSE",
+      checked_at: checkedAt,
+      adapter,
+      source: "mcp-ledger",
+      safety: {
+        mutates_sessions: false,
+        mutates_tasks: false,
+        mutates_inbox: false,
+        desktop_automation_resume: false,
+        can_assign_new_work: false
+      },
+      summary: {
+        slots: actions.length,
+        wake: 0,
+        notify: actions.filter((action) => action.notify === true).length,
+        blocked: actions.filter((action) => action.blocked === true).length,
+        coordinator_pause: summaryPause
+      },
+      actions
+    };
+  }
+
   const unreadBySlot = new Map(status.slots.map((slot) => [slot.slot, unreadMessages(store, slot.slot)]));
   const actions = status.slots.map((slot) => planWakeAction(slot, {
     adapter,
@@ -599,10 +707,35 @@ function buildWakePlan(store, input = {}) {
       slots: actions.length,
       wake: wakeActions.length,
       notify: notifyActions.length,
-      blocked: blockedActions.length
+      blocked: blockedActions.length,
+      coordinator_pause: summaryPause
     },
     actions
   };
+}
+
+function planSummaryPauseAction(slot, policy) {
+  if (slot.slot === "coordinator") {
+    return baseWakeAction(slot, {
+      action: "coordinator_summary_pause",
+      reason: policy.reason,
+      notify: true,
+      blocked: true,
+      safe_to_assign: false,
+      prompt: [
+        "Stop the coordinator loop for the scheduled Codextrator summary pause.",
+        `Integrations since last pause: ${policy.integrations_since_pause}.`,
+        "Give Ton a brief summary, then call record_summary_pause with the current integration count before assigning or waking more work."
+      ].join("\n")
+    });
+  }
+
+  return baseWakeAction(slot, {
+    action: "summary_pause_hold",
+    reason: policy.reason,
+    blocked: true,
+    safe_to_assign: false
+  });
 }
 
 function planWakeAction(slot, options) {
@@ -857,6 +990,7 @@ function buildFocusBoardSnapshot(store, input = {}) {
   const board = readFocusBoard(store);
   const status = buildStatus(store);
   const tasks = listTasks(store).map((task) => summarizeTask(task));
+  const summaryPause = buildSummaryPausePolicy(store, tasks);
   const assignments = Object.fromEntries(status.slots
     .filter((slot) => slot.slot !== "coordinator")
     .map((slot) => [slot.slot, {
@@ -905,7 +1039,8 @@ function buildFocusBoardSnapshot(store, input = {}) {
     progress: {
       status_counts: countBy(tasks, (task) => task.status || "unknown"),
       total_tasks: tasks.length,
-      active_slots: Object.keys(assignments).length
+      active_slots: Object.keys(assignments).length,
+      summary_pause: summaryPause
     },
     milestones: buildMilestoneSummaries(board, tasks),
     lanes: buildLaneSummaries(board, status, tasks),
@@ -1048,6 +1183,8 @@ module.exports = {
   updateTask,
   reportCommit,
   recordHeartbeat,
+  buildSummaryPausePolicy,
+  recordSummaryPause,
   buildWakePlan,
   recordWakeAttempt,
   buildStatus,
