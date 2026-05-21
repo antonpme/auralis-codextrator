@@ -3,16 +3,21 @@
   "version": "0.4.0",
   "description": "Parallel session orchestration, shared focus-board coordination, and a local admin dashboard for Codex.",
   "license": "MIT",
+  "homepage": "https://github.com/antonpme/auralis-codenator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antonpme/auralis-codenator.git"
+  },
   "private": false,
   "bin": {
-    "codenator": "./bin/codextrator.js",
-    "codenator-admin": "./bin/codextrator-admin.js",
-    "codenator-app-server-proof": "./bin/codextrator-app-server-proof.js",
-    "codenator-app-thread-start": "./bin/codextrator-app-thread-start.js",
-    "codenator-app-thread-discover": "./bin/codextrator-app-thread-discover.js",
-    "codenator-daemon-watch": "./bin/codextrator-daemon-watch.js",
-    "codenator-mcp-watch": "./bin/codextrator-mcp-watch.js",
-    "codenator-wake-adapter": "./bin/codextrator-wake-adapter.js",
+    "codenator": "./bin/codenator.js",
+    "codenator-admin": "./bin/codenator-admin.js",
+    "codenator-app-server-proof": "./bin/codenator-app-server-proof.js",
+    "codenator-app-thread-start": "./bin/codenator-app-thread-start.js",
+    "codenator-app-thread-discover": "./bin/codenator-app-thread-discover.js",
+    "codenator-daemon-watch": "./bin/codenator-daemon-watch.js",
+    "codenator-mcp-watch": "./bin/codenator-mcp-watch.js",
+    "codenator-wake-adapter": "./bin/codenator-wake-adapter.js",
     "codextrator": "./bin/codextrator.js",
     "codextrator-admin": "./bin/codextrator-admin.js",
     "codextrator-app-server-proof": "./bin/codextrator-app-server-proof.js",
@@ -23,7 +28,7 @@
     "codextrator-wake-adapter": "./bin/codextrator-wake-adapter.js"
   },
   "scripts": {
-    "smoke": "node ./bin/codextrator.js --help",
+    "smoke": "node ./bin/codenator.js --help",
     "test": "node ./test/codextrator-focus-board.test.js && node ./test/codextrator-admin.test.js && node ./test/codextrator-cli.test.js && node ./test/codextrator-mcp.test.js && node ./test/codextrator-watch.test.js && node ./test/codextrator-wake-adapter.test.js && node ./test/codextrator-app-thread-discovery.test.js && node ./test/codextrator-daemon-watch.test.js && node ./test/codextrator-app-server-client.test.js"
   },
   "dependencies": {

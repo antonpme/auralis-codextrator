@@ -22,7 +22,7 @@ function main() {
       error: error.stack || error.message
     };
     if (opts.json) console.log(JSON.stringify(result, null, 2));
-    else console.error(`codextrator-app-server-proof: ${error.message}`);
+    else console.error(`codenator-app-server-proof: ${error.message}`);
     process.exitCode = 1;
   });
 }
@@ -304,9 +304,13 @@ function printHuman(result) {
 }
 
 function printHelp() {
-  console.log(`codextrator-app-server-proof
+  console.log(`codenator-app-server-proof
 
 Usage:
+  codenator-app-server-proof [--json] [--port N] [--effort low|medium|high]
+                               [--timeout-ms N] [--prompt TEXT]
+
+Legacy alias:
   codextrator-app-server-proof [--json] [--port N] [--effort low|medium|high]
                                [--timeout-ms N] [--prompt TEXT]
 

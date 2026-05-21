@@ -55,11 +55,14 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`codextrator-admin
+  console.log(`codenator-admin
 
 Usage:
-  codextrator-admin [--root PATH] [--host 127.0.0.1] [--port 8787]
+  codenator-admin [--root PATH] [--host 127.0.0.1] [--port 8787]
                     [--heartbeat-max-minutes N] [--poll-ms N]
+
+Legacy alias:
+  codextrator-admin [--root PATH] [--host 127.0.0.1] [--port 8787]
 
 Starts a local read-only browser dashboard for the Codenator Focus Board,
 slot registry, task pool, and wake-plan state.

@@ -105,9 +105,14 @@ function printHuman(result) {
 }
 
 function printHelp() {
-  console.log(`codextrator-app-thread-discover
+  console.log(`codenator-app-thread-discover
 
 Usage:
+  codenator-app-thread-discover [--root PATH] [--sessions-root PATH] [--json]
+                                  [--slots session-01,session-02] [--apply]
+                                  [--url ws://127.0.0.1:4575]
+
+Legacy alias:
   codextrator-app-thread-discover [--root PATH] [--sessions-root PATH] [--json]
                                   [--slots session-01,session-02] [--apply]
                                   [--url ws://127.0.0.1:4575]

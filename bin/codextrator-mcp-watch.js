@@ -63,9 +63,13 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`codextrator-mcp-watch
+  console.log(`codenator-mcp-watch
 
 Usage:
+  codenator-mcp-watch [--root PATH] [--json] [--adapter notify-only|codex-app-server]
+                        [--heartbeat-max-minutes N] [--record-dry-run]
+
+Legacy alias:
   codextrator-mcp-watch [--root PATH] [--json] [--adapter notify-only|codex-app-server]
                         [--heartbeat-max-minutes N] [--record-dry-run]
 

@@ -5,8 +5,8 @@
   "author": {
     "name": "Auralis"
   },
-  "homepage": "https://github.com/example/auralis-codenator",
-  "repository": "https://github.com/example/auralis-codenator",
+  "homepage": "https://github.com/antonpme/auralis-codenator",
+  "repository": "https://github.com/antonpme/auralis-codenator",
   "license": "MIT",
   "keywords": [
     "codex",
@@ -29,9 +29,9 @@
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/example/auralis-codenator",
-    "privacyPolicyURL": "https://github.com/example/auralis-codenator",
-    "termsOfServiceURL": "https://github.com/example/auralis-codenator",
+    "websiteURL": "https://github.com/antonpme/auralis-codenator",
+    "privacyPolicyURL": "https://github.com/antonpme/auralis-codenator",
+    "termsOfServiceURL": "https://github.com/antonpme/auralis-codenator",
     "defaultPrompt": [
       "Use Auralis Codenator to coordinate focus slots.",
       "Show the Codenator Focus Board snapshot.",

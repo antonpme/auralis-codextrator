@@ -39,7 +39,7 @@ This repository now carries a local Codex plugin bundle:
 
 - `.codex-plugin/plugin.json`: plugin metadata.
 - `.mcp.json`: local MCP server wiring for the durable Codenator ledger.
-- `skills/codextrator/SKILL.md`: coordinator and worker operating guidance.
+- `skills/codenator/SKILL.md`: coordinator and worker operating guidance.
 
 The bundle is local-path neutral. After connecting it as a local Codex plugin
 and restarting Codex, the `auralis-codenator` MCP server exposes the same
@@ -57,7 +57,7 @@ Run it with:
 
 ```powershell
 node .\src\server.js `
-  --root C:\codextrator-ledger `
+  --root C:\codenator-ledger `
   --agent coordinator
 ```
 
@@ -105,8 +105,8 @@ Codex Desktop state, or integrate commits. Use it when humans need visibility
 without keeping worker chats open in the Codex Desktop sidebar.
 
 ```powershell
-node .\bin\codextrator-admin.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-admin.js `
+  --root C:\codenator-ledger `
   --port 8787
 ```
 
@@ -151,8 +151,8 @@ reset the counter.
 For local schedulers or a standalone daemon, use the CLI wrapper:
 
 ```powershell
-node .\bin\codextrator-mcp-watch.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-mcp-watch.js `
+  --root C:\codenator-ledger `
   --json
 ```
 
@@ -167,7 +167,7 @@ Use the app-server proof command before enabling a wake adapter that talks to
 real focus slots:
 
 ```powershell
-node .\bin\codextrator-app-server-proof.js `
+node .\bin\codenator-app-server-proof.js `
   --json
 ```
 
@@ -190,8 +190,8 @@ are resumed.
 Dry-run:
 
 ```powershell
-node .\bin\codextrator-wake-adapter.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-wake-adapter.js `
+  --root C:\codenator-ledger `
   --json `
   --dry-run
 ```
@@ -199,8 +199,8 @@ node .\bin\codextrator-wake-adapter.js `
 Send mode:
 
 ```powershell
-node .\bin\codextrator-wake-adapter.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-wake-adapter.js `
+  --root C:\codenator-ledger `
   --slot session-01 `
   --json `
   --send `
@@ -215,7 +215,7 @@ write wake attempts.
 For a harmless loopback proof through a temporary read-only thread:
 
 ```powershell
-node .\bin\codextrator-wake-adapter.js `
+node .\bin\codenator-wake-adapter.js `
   --test-thread `
   --json `
   --effort low
@@ -226,7 +226,7 @@ node .\bin\codextrator-wake-adapter.js `
 To create a new persistent headless app-server thread for a slot:
 
 ```powershell
-node .\bin\codextrator-app-thread-start.js `
+node .\bin\codenator-app-thread-start.js `
   --slot session-01 `
   --cwd C:\workspace\worktrees\session-01 `
   --json
@@ -237,13 +237,13 @@ readiness turn. It does not mutate the Codenator registry by itself; register
 the returned id with `register_slot` or run discovery/apply afterward. This
 keeps thread creation separate from durable slot metadata.
 
-`codextrator-app-thread-discover` scans local Codex Desktop session JSONL files
+`codenator-app-thread-discover` scans local Codex Desktop session JSONL files
 and proposes app-server thread ids for slots whose startup prompts explicitly
 name `slot session-XX` or `slot coordinator`. Default mode is read-only:
 
 ```powershell
-node .\bin\codextrator-app-thread-discover.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-app-thread-discover.js `
+  --root C:\codenator-ledger `
   --slots session-01,session-02,session-03,session-04 `
   --json
 ```
@@ -251,8 +251,8 @@ node .\bin\codextrator-app-thread-discover.js `
 To store the discovered metadata for non-coordinator slots:
 
 ```powershell
-node .\bin\codextrator-app-thread-discover.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-app-thread-discover.js `
+  --root C:\codenator-ledger `
   --slots session-01,session-02,session-03,session-04 `
   --apply `
   --json
@@ -264,12 +264,12 @@ automations.
 
 ### Daemon Watch
 
-`codextrator-daemon-watch` packages the wake path for an external local watcher.
+`codenator-daemon-watch` packages the wake path for an external local watcher.
 Default mode is one dry-run cycle:
 
 ```powershell
-node .\bin\codextrator-daemon-watch.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-daemon-watch.js `
+  --root C:\codenator-ledger `
   --json `
   --once
 ```
@@ -277,8 +277,8 @@ node .\bin\codextrator-daemon-watch.js `
 Loop mode is opt-in:
 
 ```powershell
-node .\bin\codextrator-daemon-watch.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-daemon-watch.js `
+  --root C:\codenator-ledger `
   --json `
   --loop `
   --interval-ms 300000
@@ -291,8 +291,8 @@ task wakeups; otherwise the daemon records
 `reason=explicit_prompt_mode_required` and does not call app-server.
 
 ```powershell
-node .\bin\codextrator-daemon-watch.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-daemon-watch.js `
+  --root C:\codenator-ledger `
   --slots session-04 `
   --send `
   --prompt "Harmless wake proof. Do not use tools. Reply briefly." `
@@ -302,8 +302,8 @@ node .\bin\codextrator-daemon-watch.js `
 For real task wakeups, use the guarded work prompt:
 
 ```powershell
-node .\bin\codextrator-daemon-watch.js `
-  --root C:\codextrator-ledger `
+node .\bin\codenator-daemon-watch.js `
+  --root C:\codenator-ledger `
   --slots session-04 `
   --send `
   --prompt-mode work `
@@ -324,13 +324,13 @@ actions when explicitly enabled, and records wake attempts under `wake/`.
 Initialize a shared store:
 
 ```powershell
-node .\bin\codextrator.js init --root C:\workspace
+node .\bin\codenator.js init --root C:\workspace
 ```
 
 Register a session slot:
 
 ```powershell
-node .\bin\codextrator.js register session-01 `
+node .\bin\codenator.js register session-01 `
   --project demo-project `
   --identity developer `
   --focus "Feature A" `
@@ -341,7 +341,7 @@ node .\bin\codextrator.js register session-01 `
 Send a message:
 
 ```powershell
-node .\bin\codextrator.js send coordinator `
+node .\bin\codenator.js send coordinator `
   --from session-01 `
   --subject "Feature A ready" `
   --message "Committed the first draft for review."
@@ -350,13 +350,13 @@ node .\bin\codextrator.js send coordinator `
 Read inbox:
 
 ```powershell
-node .\bin\codextrator.js inbox coordinator
+node .\bin\codenator.js inbox coordinator
 ```
 
 Assign a structured task:
 
 ```powershell
-node .\bin\codextrator.js task-create session-01 `
+node .\bin\codenator.js task-create session-01 `
   --task-id session-01-round-1 `
   --title "Round 1: focused slice" `
   --message "Work only in the assigned files, test, commit, and report."
@@ -365,36 +365,36 @@ node .\bin\codextrator.js task-create session-01 `
 List tasks and slots:
 
 ```powershell
-node .\bin\codextrator.js task-list
-node .\bin\codextrator.js slots
+node .\bin\codenator.js task-list
+node .\bin\codenator.js slots
 ```
 
 Import already-queued inbox messages into task records without sending
 duplicates:
 
 ```powershell
-node .\bin\codextrator.js task-import-inbox session-01
+node .\bin\codenator.js task-import-inbox session-01
 ```
 
 Record heartbeat health:
 
 ```powershell
-node .\bin\codextrator.js heartbeat session-01 `
+node .\bin\codenator.js heartbeat session-01 `
   --status ok `
-  --automation-id auralis-codextrator-session-01
+  --automation-id auralis-codenator-session-01
 ```
 
 Show recovery recommendations:
 
 ```powershell
-node .\bin\codextrator.js recovery
+node .\bin\codenator.js recovery
 ```
 
 Run a quiet watchdog check that does not create Codex sessions and does not
 mutate inboxes, tasks, or focus-slot state:
 
 ```powershell
-node .\bin\codextrator.js watchdog-check --json
+node .\bin\codenator.js watchdog-check --json
 ```
 
 `watchdog-check` reads coordinator inbox, recovery, and heartbeat health, then
@@ -406,8 +406,8 @@ frequent Codex cron automation when sidebar noise matters.
 Example quiet local check:
 
 ```powershell
-$env:AURALIS_CODENATOR_ROOT = "C:\codextrator-ledger"
-node .\bin\codextrator.js watchdog-check `
+$env:AURALIS_CODENATOR_ROOT = "C:\codenator-ledger"
+node .\bin\codenator.js watchdog-check `
   --json `
   --snooze-minutes 20
 ```
@@ -418,13 +418,13 @@ integration, task assignment, inbox clearing, or Desktop thread creation.
 Show status:
 
 ```powershell
-node .\bin\codextrator.js status
+node .\bin\codenator.js status
 ```
 
 Submit a commit report from the current worktree:
 
 ```powershell
-codextrator report-commit
+codenator report-commit
 ```
 
 The `codenator` binary name is preferred for new usage. The older
@@ -439,7 +439,7 @@ commit report when it sees a git commit command.
 Print a hook template:
 
 ```powershell
-node .\bin\codextrator.js hook-template
+node .\bin\codenator.js hook-template
 ```
 
 Then place the output in a workspace `.codex/hooks.json`, or adapt it to your

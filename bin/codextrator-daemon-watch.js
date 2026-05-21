@@ -87,14 +87,17 @@ function printHuman(result) {
 }
 
 function printHelp() {
-  console.log(`codextrator-daemon-watch
+  console.log(`codenator-daemon-watch
 
 Usage:
-  codextrator-daemon-watch [--root PATH] [--json] [--once]
+  codenator-daemon-watch [--root PATH] [--json] [--once]
                            [--loop --interval-ms N --max-cycles N]
                            [--slots session-01,session-02] [--send]
                            [--prompt TEXT | --prompt-mode work]
                            [--sandbox MODE]
+
+Legacy alias:
+  codextrator-daemon-watch [--root PATH] [--json] [--once]
 
 Default mode is one dry-run cycle. It reads Codenator MCP wake state and
 prints planned app-server wakes without mutating inboxes or tasks. With --send,
@@ -105,6 +108,6 @@ thread/resume followed by turn/start. Send mode requires either an explicit
 }
 
 main().catch((error) => {
-  console.error(`codextrator-daemon-watch: ${error.stack || error.message}`);
+  console.error(`codenator-daemon-watch: ${error.stack || error.message}`);
   process.exitCode = 1;
 });

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"C:/tools/auralis-codextrator/bin/codextrator.js\" hook-post-tool-use"
+            "command": "node \"C:/tools/auralis-codenator/bin/codenator.js\" hook-post-tool-use"
           }
         ]
       }

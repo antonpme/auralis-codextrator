@@ -45,7 +45,7 @@ function main() {
       error: error.stack || error.message
     };
     if (opts.json) console.log(JSON.stringify(result, null, 2));
-    else console.error(`codextrator-app-thread-start: ${error.message}`);
+    else console.error(`codenator-app-thread-start: ${error.message}`);
     process.exitCode = 1;
   });
 }
@@ -81,16 +81,20 @@ function printHuman(result) {
 }
 
 function printHelp() {
-  console.log(`codextrator-app-thread-start
+  console.log(`codenator-app-thread-start
 
 Usage:
+  codenator-app-thread-start --slot session-01 --cwd PATH [--json]
+  codenator-app-thread-start --cwd PATH --prompt TEXT --expected TEXT [--json]
+
+Legacy aliases:
   codextrator-app-thread-start --slot session-01 --cwd PATH [--json]
   codextrator-app-thread-start --cwd PATH --prompt TEXT --expected TEXT [--json]
 
 Starts a persistent Codex app-server thread for a headless Codenator focus
 slot, sends an optional readiness prompt, waits for turn completion, and prints
 the thread id. This command does not register the slot; use register_slot or
-codextrator-app-thread-discover to persist the thread id in the ledger.
+codenator-app-thread-discover to persist the thread id in the ledger.
 `);
 }
 

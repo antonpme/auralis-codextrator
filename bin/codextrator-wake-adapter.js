@@ -23,7 +23,7 @@ function main() {
       error: error.stack || error.message
     };
     if (opts.json) console.log(JSON.stringify(result, null, 2));
-    else console.error(`codextrator-wake-adapter: ${error.message}`);
+    else console.error(`codenator-wake-adapter: ${error.message}`);
     process.exitCode = 1;
   });
 }
@@ -233,19 +233,25 @@ function printHuman(result) {
 }
 
 function printHelp() {
-  console.log(`codextrator-wake-adapter
+  console.log(`codenator-wake-adapter
 
 Usage:
-  codextrator-wake-adapter [--root PATH] [--json] [--slot session-01]
+  codenator-wake-adapter [--root PATH] [--json] [--slot session-01]
                            [--dry-run] [--send] [--port N] [--url WS_URL]
                            [--effort low|medium|high|xhigh]
                            [--heartbeat-max-minutes N]
+
+Legacy alias:
+  codextrator-wake-adapter [--root PATH] [--json] [--slot session-01]
 
 Default mode is dry-run. It plans codex-app-server wake requests from the MCP
 ledger but does not send a turn unless --send is present. A slot is sendable
 only after register_slot stores an explicit app_server_thread_id.
 
 Proof mode:
+  codenator-wake-adapter --test-thread --json
+
+Legacy proof alias:
   codextrator-wake-adapter --test-thread --json
 `);
 }
